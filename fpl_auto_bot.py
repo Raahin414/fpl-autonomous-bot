@@ -9,6 +9,7 @@ import schedule
 import datetime
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+print("📦 Downloading NLTK resources...")
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from sklearn.linear_model import LinearRegression
 from openpyxl import Workbook
