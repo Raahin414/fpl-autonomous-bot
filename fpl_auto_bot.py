@@ -12,13 +12,14 @@ from bs4 import BeautifulSoup
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from sklearn.linear_model import LinearRegression
 from openpyxl import Workbook
+print("✅ Bot started execution.")
 
 # Load environment variables
 load_dotenv()
 EMAIL = os.getenv("FPL_EMAIL")
 PASSWORD = os.getenv("FPL_PASSWORD")
 TEAM_ID = os.getenv("FPL_TEAM_ID")
-
+print("🔐 Logging into FPL...")
 # Initialize sentiment analyzer
 sid = SentimentIntensityAnalyzer()
 
@@ -28,7 +29,7 @@ sid = SentimentIntensityAnalyzer()
 def fetch_fpl_data():
     # Pull official FPL data
     return requests.get("https://fantasy.premierleague.com/api/bootstrap-static/").json()
-
+print("📊 Fetching player stats...")
 def get_current_gw_and_deadline():
     events = fetch_fpl_data()["events"]
     for event in events:
@@ -59,7 +60,7 @@ def analyze_sentiment():
         except Exception as e:
             print(f"Error scraping {url}: {e}")
     return sentiment_scores
-
+print("📰 Scraping media news...")
 def select_initial_squad(data, sentiment):
     print("Selecting initial squad...")
     return [101, 102, 103]  # Dummy player IDs
@@ -83,7 +84,7 @@ def apply_changes(changes):
 def initial_team_exists():
     # Stub logic; replace with real check later
     return False
-
+print("⚙️ Running ML model...")
 # --- CORE LOOP ---
 def weekly_routine():
     today = datetime.date.today()
@@ -109,7 +110,7 @@ def weekly_routine():
 
 # Schedule the bot daily to catch all deadline variations
 schedule.every().day.at("07:30").do(weekly_routine)
-
+print("🧠 Making transfers...")
 if __name__ == "__main__":
     print("FPL Auto Bot is running...")
     weekly_routine()  # run once immediately
