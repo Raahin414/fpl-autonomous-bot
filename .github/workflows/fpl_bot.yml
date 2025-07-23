@@ -3,7 +3,7 @@ name: Run FPL Bot Daily
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 4 * * *'  # Runs every day at 9 AM Pakistan time
+    - cron: '0 4 * * *'
 
 jobs:
   run-bot:
@@ -20,6 +20,10 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Download NLTK data
+        run: |
+          python -m nltk.downloader vader_lexicon
 
       - name: Run FPL bot
         run: python fpl_auto_bot.py
