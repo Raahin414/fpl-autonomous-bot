@@ -1,0 +1,12 @@
+pandas
+numpy
+requests
+beautifulsoup4
+scikit-learn
+nltk
+vaderSentiment
+matplotlib
+openpyxl
+plotly
+schedule
+python-dotenv
