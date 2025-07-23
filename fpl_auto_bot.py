@@ -9,28 +9,36 @@ import schedule
 import datetime
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
-print("📦 Downloading NLTK resources...")
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from sklearn.linear_model import LinearRegression
 from openpyxl import Workbook
-print("✅ Bot started execution.")
+
+print("\U0001F4E6 Downloading NLTK resources...")
+import nltk
+nltk.download('vader_lexicon')
+
+print("\u2705 Bot started execution.")
 
 # Load environment variables
 load_dotenv()
 EMAIL = os.getenv("FPL_EMAIL")
 PASSWORD = os.getenv("FPL_PASSWORD")
 TEAM_ID = os.getenv("FPL_TEAM_ID")
-print("🔐 Logging into FPL...")
+
+# FPL API endpoints
+LOGIN_URL = "https://users.premierleague.com/accounts/login/"
+TRANSFERS_URL = f"https://fantasy.premierleague.com/api/my-team/{TEAM_ID}/transfers/"
+MY_TEAM_URL = f"https://fantasy.premierleague.com/api/my-team/{TEAM_ID}/"
+ENTRY_URL = f"https://fantasy.premierleague.com/api/entry/{TEAM_ID}/"
+
 # Initialize sentiment analyzer
 sid = SentimentIntensityAnalyzer()
 
-# --- PLACEHOLDER FUNCTIONS ---
-# In the real deployment, implement these modules properly.
-
+# Fetch data from FPL
 def fetch_fpl_data():
-    # Pull official FPL data
     return requests.get("https://fantasy.premierleague.com/api/bootstrap-static/").json()
-print("📊 Fetching player stats...")
+
+# Get current gameweek and deadline
 def get_current_gw_and_deadline():
     events = fetch_fpl_data()["events"]
     for event in events:
@@ -39,6 +47,7 @@ def get_current_gw_and_deadline():
             return event["id"], deadline
     return None, None
 
+# Analyze sentiment from top 5 football news sources
 def analyze_sentiment():
     sources = [
         "https://www.bbc.com/sport/football/premier-league",
@@ -61,60 +70,117 @@ def analyze_sentiment():
         except Exception as e:
             print(f"Error scraping {url}: {e}")
     return sentiment_scores
-print("📰 Scraping media news...")
-def select_initial_squad(data, sentiment):
-    print("Selecting initial squad...")
-    return [101, 102, 103]  # Dummy player IDs
 
+# Select initial squad intelligently using price, points, form
+def select_initial_squad(data, sentiment):
+    players = pd.DataFrame(data['elements'])
+    players = players[(players['minutes'] > 0) & (players['now_cost'] > 40)]
+    players['score'] = (
+        players['total_points'] +
+        players['form'].astype(float) * 10 +
+        players['bonus'] +
+        players['minutes'] / 90
+    )
+    players = players.sort_values("score", ascending=False)
+    selected = players.head(15)["id"].tolist()
+    return selected
+
+# Optimize weekly transfers
 def optimize_transfers(data, sentiment):
+    players = pd.DataFrame(data['elements'])
+    players = players[(players['minutes'] > 0) & (players['now_cost'] > 40)]
+    players['score'] = (
+        players['form'].astype(float) * 10 +
+        players['bonus'] +
+        players['bps'] +
+        players['total_points']
+    )
+    players = players.sort_values("score", ascending=False)
+    top_15 = players.head(15)
+    transfer_ids = top_15['id'].tolist()
+    captain = top_15.iloc[0]['id']
+    vice = top_15.iloc[1]['id']
     return {
-        "transfers": [(201, 202)],  # out_id, in_id
-        "captain": 301,
-        "vice_captain": 302,
+        "transfers": [],
+        "squad": transfer_ids,
+        "captain": captain,
+        "vice_captain": vice,
         "chip": None
     }
 
+# Apply transfers to FPL using session
+def apply_changes(session, changes, initial=False):
+    headers = {"Referer": "https://fantasy.premierleague.com/"}
+    payload = {
+        "confirmed": True,
+        "entry": TEAM_ID,
+        "event": get_current_gw_and_deadline()[0],
+        "transfers": [],
+        "captain": changes['captain'],
+        "vice_captain": changes['vice_captain'],
+        "chip": changes['chip'] if changes['chip'] else ""
+    }
+    if initial:
+        payload["squad"] = changes["squad"]
+    res = session.post(TRANSFERS_URL, headers=headers, json=payload)
+    print("Transfer response:", res.status_code)
+
+# Authenticate to FPL
+def login_fpl():
+    session = requests.Session()
+    session.headers.update({'User-Agent': 'Mozilla/5.0'})
+    login_data = {
+        'login': EMAIL,
+        'password': PASSWORD,
+        'redirect_uri': 'https://fantasy.premierleague.com/',
+        'app': 'plfpl-web'
+    }
+    session.post(LOGIN_URL, data=login_data)
+    return session
+
+# Export dashboard
 def update_dashboard(team):
     df = pd.DataFrame(team)
     df.to_excel("fpl_dashboard.xlsx", index=False)
 
-def apply_changes(changes):
-    print("Applying transfers:", changes)
-    # Integrate with login and transfer logic (see fantasy.premierleague API)
-
-def initial_team_exists():
-    # Stub logic; replace with real check later
-    return False
-print("⚙️ Running ML model...")
-# --- CORE LOOP ---
+# Main bot logic
+print("\u2699\ufe0f Running ML model...")
 def weekly_routine():
     today = datetime.date.today()
     current_gw, deadline = get_current_gw_and_deadline()
-    print(f"Current GW: {current_gw}, Deadline: {deadline}")
+    print(f"\n--- GW {current_gw} --- Deadline: {deadline} ---")
 
+    session = login_fpl()
     fpl_data = fetch_fpl_data()
     sentiment = analyze_sentiment()
 
-    if current_gw == 1 and not initial_team_exists():
-        if datetime.date(2025, 8, 10) <= today <= datetime.date(2025, 8, 15):
-            initial_squad = select_initial_squad(fpl_data, sentiment)
-            apply_changes({"initial_squad": initial_squad})
-            update_dashboard(initial_squad)
-            return
-        else:
-            print("Waiting for appropriate window to build initial squad.")
-            return
+    # For GW1 with unlimited transfers
+    if current_gw == 1 and datetime.date(2025, 8, 10) <= today <= datetime.date(2025, 8, 15):
+        print("Creating initial squad for GW1 (unlimited transfers)...")
+        initial_squad = select_initial_squad(fpl_data, sentiment)
+        captain = initial_squad[0]
+        vice_captain = initial_squad[1]
+        apply_changes(session, {
+            "squad": initial_squad,
+            "captain": captain,
+            "vice_captain": vice_captain,
+            "chip": None
+        }, initial=True)
+        update_dashboard(initial_squad)
+        return
 
+    # After GW1 logic
+    print("Optimizing team for upcoming GW...")
     decisions = optimize_transfers(fpl_data, sentiment)
-    apply_changes(decisions)
+    apply_changes(session, decisions)
     update_dashboard(decisions)
 
-# Schedule the bot daily to catch all deadline variations
+# Schedule bot daily
 schedule.every().day.at("07:30").do(weekly_routine)
-print("🧠 Making transfers...")
+
 if __name__ == "__main__":
-    print("FPL Auto Bot is running...")
-    weekly_routine()  # run once immediately
+    print("FPL Auto Bot is running...\n")
+    weekly_routine()  # Run once
     while True:
         schedule.run_pending()
         time.sleep(60)
