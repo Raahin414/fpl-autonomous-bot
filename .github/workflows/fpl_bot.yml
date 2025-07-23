@@ -27,3 +27,7 @@ jobs:
 
       - name: Run FPL bot
         run: python fpl_auto_bot.py
+        env:
+          FPL_EMAIL: ${{ secrets.FPL_EMAIL }}
+          FPL_PASSWORD: ${{ secrets.FPL_PASSWORD }}
+          FPL_TEAM_ID: ${{ secrets.FPL_TEAM_ID }}
