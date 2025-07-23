@@ -111,19 +111,24 @@ def optimize_transfers(data, sentiment):
 # Apply transfers to FPL using session
 def apply_changes(session, changes, initial=False):
     headers = {"Referer": "https://fantasy.premierleague.com/"}
+    current_gw = get_current_gw_and_deadline()[0]
+
     payload = {
         "confirmed": True,
-        "entry": TEAM_ID,
-        "event": get_current_gw_and_deadline()[0],
+        "entry": int(TEAM_ID),
+        "event": int(current_gw),
         "transfers": [],
-        "captain": changes['captain'],
-        "vice_captain": changes['vice_captain'],
+        "captain": int(changes['captain']),
+        "vice_captain": int(changes['vice_captain']),
         "chip": changes['chip'] if changes['chip'] else ""
     }
+
     if initial:
-        payload["squad"] = changes["squad"]
+        payload["squad"] = [int(pid) for pid in changes["squad"]]
+
     res = session.post(TRANSFERS_URL, headers=headers, json=payload)
     print("Transfer response:", res.status_code)
+    print("Response content:", res.text)
 
 # Authenticate to FPL
 def login_fpl():
