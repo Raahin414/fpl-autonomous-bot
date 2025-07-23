@@ -1,35 +1,25 @@
 name: Run FPL Bot Daily
-#REFRESH
+
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '0 4 * * *'  # 9 AM Pakistan time (UTC+5)
-  workflow_dispatch:     # Enables manual trigger
+    - cron: '0 4 * * *'  # Runs every day at 9 AM Pakistan time
 
 jobs:
   run-bot:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: '3.10'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run FPL bot
-        env:
-          FPL_EMAIL: ${{ secrets.FPL_EMAIL }}
-          FPL_PASSWORD: ${{ secrets.FPL_PASSWORD }}
-          FPL_TEAM_ID: ${{ secrets.FPL_TEAM_ID }}
-          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-          REDDIT_SECRET: ${{ secrets.REDDIT_SECRET }}
-          REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
-        run: |
-          python fpl_auto_bot.py
+        run: python fpl_auto_bot.py
