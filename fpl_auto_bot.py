@@ -142,8 +142,7 @@ def scrape_sentiment(players_df: pd.DataFrame) -> dict:
             if not res.ok:
                 continue
             soup = BeautifulSoup(res.text, 'html.parser')
-            text = "
-".join([t.get_text(" ") for t in soup.find_all(['p','h1','h2','h3','li'])])
+            text = " ".join([t.get_text(" ") for t in soup.find_all(['p','h1','h2','h3','li'])])
             comp = _sid.polarity_scores(text)['compound']
             low = text.lower()
             for n in names:
@@ -427,3 +426,4 @@ if __name__ == "__main__":
         print("
 [ERROR]", e)
         traceback.print_exc()
+
