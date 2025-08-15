@@ -286,8 +286,7 @@ def post_picks(session: requests.Session, picks_payload: dict):
 # -------------------------
 
 def weekly_routine():
-    print("
-===== FPL AUTO RUN =====")
+    print("===== FPL AUTO RUN =====")
     bs = fetch_bootstrap()
     events = bs.get('events', [])
     next_ev = None
@@ -426,4 +425,5 @@ if __name__ == "__main__":
         print("
 [ERROR]", e)
         traceback.print_exc()
+
 
