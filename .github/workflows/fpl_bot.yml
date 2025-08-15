@@ -26,6 +26,8 @@ jobs:
           python -m nltk.downloader vader_lexicon
 
       - name: Run FPL bot
+        - run: pip install requests pandas beautifulsoup4 playwright
+        - run: playwright install
         run: python fpl_auto_bot.py
         env:
           FPL_EMAIL: ${{ secrets.FPL_EMAIL }}
