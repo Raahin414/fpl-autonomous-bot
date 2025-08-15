@@ -282,8 +282,7 @@ def set_picks(session: requests.Session, picks_payload: dict) -> None:
 # -------------------------
 
 def weekly_routine():
-    print("
-===== FPL AUTO RUN =====")
+    print("===== FPL AUTO RUN =====")
     bs = fetch_bootstrap()
     events = bs.get('events', [])
     next_ev = get_next_gw(events)
@@ -409,5 +408,6 @@ def weekly_routine():
 
 if __name__ == "__main__":
     weekly_routine()
+
 
 
