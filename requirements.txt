@@ -10,3 +10,6 @@ openpyxl
 plotly
 schedule
 python-dotenv
+undetected-chromedriver
+selenium
+
