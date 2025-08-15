@@ -115,7 +115,7 @@ def scrape_sentiment_by_player(players_df: pd.DataFrame) -> dict:
             if not res.ok:
                 continue
             soup = BeautifulSoup(res.text, 'html.parser')
-            texts = "
+            text = " "
 ".join([p.get_text(" ") for p in soup.find_all(['p','h1','h2','h3','li'])])
             comp = _sid.polarity_scores(texts)['compound']
             # naive boost: distribute to all names mentioned
@@ -410,3 +410,4 @@ def weekly_routine():
 
 if __name__ == "__main__":
     weekly_routine()
+
