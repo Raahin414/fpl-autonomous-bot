@@ -3,7 +3,7 @@ name: Run FPL Bot Daily
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 4 * * *'
+    - cron: '0 4 * * *'   # daily at 04:00 UTC
 
 jobs:
   run-bot:
@@ -19,18 +19,17 @@ jobs:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install playwright
+          playwright install
 
       - name: Download NLTK data
-        run: |
-          python -m nltk.downloader vader_lexicon
+        run: python -m nltk.downloader vader_lexicon
 
       - name: Run FPL bot
-        - run: pip install requests pandas beautifulsoup4 playwright
-        - run: playwright install
         run: python fpl_auto_bot.py
         env:
           FPL_EMAIL: ${{ secrets.FPL_EMAIL }}
           FPL_PASSWORD: ${{ secrets.FPL_PASSWORD }}
           FPL_TEAM_ID: ${{ secrets.FPL_TEAM_ID }}
-          PL_SESSION: ${{ secrets.PL_SESSION }}
