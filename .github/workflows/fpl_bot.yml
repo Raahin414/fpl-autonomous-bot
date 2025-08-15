@@ -31,3 +31,4 @@ jobs:
           FPL_EMAIL: ${{ secrets.FPL_EMAIL }}
           FPL_PASSWORD: ${{ secrets.FPL_PASSWORD }}
           FPL_TEAM_ID: ${{ secrets.FPL_TEAM_ID }}
+          PL_SESSION: ${{ secrets.PL_SESSION }}
